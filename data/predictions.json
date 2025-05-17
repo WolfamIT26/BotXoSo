@@ -1,0 +1,19 @@
+{
+  "drawId": "202505161941",
+  "timestamp": "2025-05-16T18:38:34.356Z",
+  "doanTaiXiu": "Tài",
+  "prediction": true,
+  "method": "AdvancedCombination",
+  "confidence": 0.2964,
+  "reason": "Phát hiện mẫu T-X-X, dự đoán tiếp theo T",
+  "numbers": [
+    5,
+    2,
+    7,
+    9,
+    4
+  ],
+  "predictedValue": 5,
+  "targetIndex": 0,
+  "timeSegment": "latenight"
+}

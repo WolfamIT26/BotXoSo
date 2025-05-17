@@ -1,0 +1,21 @@
+{
+  "username": "",
+  "password": "",
+  "betting": {
+    "enabled": false,
+    "demoMode": true,
+    "accountBalance": 0,
+    "baseBetAmount": 20000,
+    "currentBalance": 0,
+    "strategy": "martingale",
+    "maxMultiplier": 6,
+    "consecutiveLosses": 0,
+    "lastBetAmount": 0,
+    "disabledReason": null,
+    "disabledAt": null,
+    "stopLoss": -200000,
+    "takeProfit": 300000,
+    "resetAfterTP": true,
+    "resetAfterSL": true
+  }
+}
