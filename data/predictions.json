@@ -1,19 +1,19 @@
 {
-  "drawId": "202505161941",
-  "timestamp": "2025-05-16T18:38:34.356Z",
+  "drawId": "202505192181",
+  "timestamp": "2025-05-19T07:44:34.296Z",
   "doanTaiXiu": "Tài",
   "prediction": true,
   "method": "AdvancedCombination",
-  "confidence": 0.2964,
-  "reason": "Phát hiện mẫu T-X-X, dự đoán tiếp theo T",
+  "confidence": 0.30400000000000005,
+  "reason": "Phát hiện 3 X liên tiếp, dự đoán đảo chiều",
   "numbers": [
-    5,
-    2,
+    8,
+    7,
     7,
     9,
-    4
+    9
   ],
-  "predictedValue": 5,
+  "predictedValue": 8,
   "targetIndex": 0,
-  "timeSegment": "latenight"
+  "timeSegment": "afternoon"
 }

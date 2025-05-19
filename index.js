@@ -24,7 +24,7 @@ async function main() {
         console.error('❌ Lỗi trong lúc lấy hoặc lưu dữ liệu:', error);
         await sendAutoNotification('❌ Có lỗi xảy ra khi cập nhật dữ liệu xổ số');
       }
-    }, 5000);
+    }, 3000);
 
     const browser = await launchBrowser();
     const page = await openBettingPage(browser);
