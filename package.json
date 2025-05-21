@@ -1,16 +1,13 @@
 {
-  "name": "bot-bet",
+  "name": "botxoso",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "",
+  "main": "telegramBot.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "start": "node telegramBot.js",
+    "dev": "nodemon telegramBot.js"
   },
-  "nodemonConfig": {
-    "ignore": [
-      "**/*.json"
-    ]
-  },
+  "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -20,7 +17,5 @@
     "node-telegram-bot-api": "^0.66.0",
     "nodemon": "^3.1.9",
     "puppeteer-core": "^24.4.0"
-  },
-  "keywords": [],
-  "description": ""
+  }
 }

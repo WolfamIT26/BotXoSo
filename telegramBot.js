@@ -2,21 +2,34 @@ const TelegramBot = require('node-telegram-bot-api');
 const predictors = require('./predictors/index');
 const { getAllLotteryNumbers } = require('./database/dataAccess');
 const path = require('path');
+const connectDB = require('./config/database');
+const dataCollector = require('./collectors/dataCollector');
+const dataStorage = require('./database/dataStorage');
+const { openBettingPage, launchBrowser, getCountDownTime, deleteServiceFloat } = require('./betAutomatic');
 
 // Thay thế 'YOUR_BOT_TOKEN' bằng token của bot bạn nhận được từ BotFather
 const token = '7706655307:AAHHaUYz0wPCVTIDd_ho2lWSZXkmLUmqxF8';
-// Chat ID của group
-const CHAT_ID = '-1002674937562';
+// Chat ID của các group
+const CHAT_IDS = ['-1002674937562', '-1002570715628'];
 
 console.log('🔑 Token bot:', token);
-console.log('💬 Chat ID:', CHAT_ID);
+console.log('💬 Chat IDs:', CHAT_IDS);
 
 // Tạo một bot instance với cấu hình đơn giản
-const bot = new TelegramBot(token, { polling: false });
+const bot = new TelegramBot(token, { polling: true });
 
 // Xử lý lỗi
 bot.on('error', (error) => {
     console.error('❌ Lỗi Telegram bot:', error);
+});
+
+// Xử lý khi bot khởi động thành công
+bot.on('polling_error', (error) => {
+    console.error('❌ Lỗi polling:', error);
+});
+
+bot.on('webhook_error', (error) => {
+    console.error('❌ Lỗi webhook:', error);
 });
 
 let currentStart = null;
@@ -74,7 +87,7 @@ async function startBot() {
         currentType = 'Xỉu'; // fallback
     }
 
-    await sendKeoAndHistory(CHAT_ID, 'Đợi');
+    await sendKeoAndHistory(CHAT_IDS[0], 'Đợi');
 
     runningInterval = setInterval(async () => {
         const data = await getAllLotteryNumbers();
@@ -93,7 +106,7 @@ async function startBot() {
             console.log('DEBUG:', { sodau, ketQua, currentType, nowKy, currentStart, currentEnd });
             if (ketQua === currentType) {
                 // THẮNG
-                await sendKeoAndHistory(CHAT_ID, 'Húp 🎉');
+                await sendKeoAndHistory(CHAT_IDS[0], 'Húp 🎉');
                 keoHistory.push(`${currentStart}-${currentEnd} gấp thếp ${currentStep} [${currentType}] Húp 🎉`);
                 // Reset gấp thếp, chuyển kỳ mới
                 currentStart = nowKy + 1;
@@ -111,12 +124,12 @@ async function startBot() {
                 } else {
                     currentType = 'Xỉu'; // fallback
                 }
-                await sendKeoAndHistory(CHAT_ID, 'ĐỢI');
+                await sendKeoAndHistory(CHAT_IDS[0], 'ĐỢI');
             } else {
                 // THUA
                 if (currentStep >= 7) {
                     // Gãy
-                    await sendKeoAndHistory(CHAT_ID, 'Gãy 💥');
+                    await sendKeoAndHistory(CHAT_IDS[0], 'Gãy 💥');
                     keoHistory.push(`${currentStart}-${currentEnd} gấp thếp ${currentStep} [${currentType}] Gãy 💥`);
 
                     // Reset gấp thếp, chuyển kỳ mới
@@ -135,11 +148,11 @@ async function startBot() {
                     } else {
                         currentType = 'Xỉu'; // fallback
                     }
-                    await sendKeoAndHistory(CHAT_ID, 'ĐỢI');
+                    await sendKeoAndHistory(CHAT_IDS[0], 'ĐỢI');
                 } else {
                     // Tăng gấp thếp
                     currentStep += 1;
-                    await sendKeoAndHistory(CHAT_ID, 'ĐỢI');
+                    await sendKeoAndHistory(CHAT_IDS[0], 'ĐỢI');
                 }
             }
         }
@@ -174,25 +187,83 @@ async function sendKeoAndHistory(chatId, trangThai = 'ĐỢI') {
 
     // Gộp thành 1 tin nhắn
     const message = formatHistoryMessage(historyMessages, lastLine);
-    await bot.sendMessage(chatId, message);
+    
+    // Gửi tin nhắn đến tất cả các nhóm
+    for (const chatId of CHAT_IDS) {
+        try {
+            await bot.sendMessage(chatId, message);
+        } catch (error) {
+            console.error(`❌ Lỗi khi gửi tin nhắn đến nhóm ${chatId}:`, error);
+        }
+    }
 }
 
 // Hàm gửi thông báo tự động
 async function sendAutoNotification(message) {
     try {
-        console.log('📤 Gửi thông báo đến chat:', CHAT_ID);
+        console.log('📤 Gửi thông báo đến các nhóm:', CHAT_IDS);
         console.log('📝 Nội dung:', message);
-        await bot.sendMessage(CHAT_ID, message);
+        
+        // Gửi tin nhắn đến tất cả các nhóm
+        for (const chatId of CHAT_IDS) {
+            try {
+                await bot.sendMessage(chatId, message);
+            } catch (error) {
+                console.error(`❌ Lỗi khi gửi thông báo đến nhóm ${chatId}:`, error);
+            }
+        }
         console.log('✅ Gửi thông báo thành công');
     } catch (error) {
         console.error('❌ Lỗi khi gửi thông báo tự động:', error);
     }
 }
 
-// Khởi động bot
-bot.startPolling({ polling: true });
-// Tự động bắt đầu gửi kèo
-startBot();
+// Hàm khởi động chính
+async function main() {
+    try {
+        await connectDB();
+        await dataCollector.initialize();
+
+        // Khởi tạo Telegram bot
+        console.log('🤖 Khởi động Telegram bot...');
+        await sendAutoNotification('Bot đã được khởi động thành công!');
+
+        // Bắt đầu gửi kèo
+        await startBot();
+
+        setInterval(async () => {
+            try {
+                const lotteryData = await dataCollector.getLotteryResults();
+                await dataStorage.saveNumbers(lotteryData);
+            } catch (error) {
+                console.error('❌ Lỗi trong lúc lấy hoặc lưu dữ liệu:', error);
+                await sendAutoNotification('❌ Có lỗi xảy ra khi cập nhật dữ liệu xổ số');
+            }
+        }, 3000);
+
+        const browser = await launchBrowser();
+        const page = await openBettingPage(browser);
+        deleteServiceFloat(page);
+        getCountDownTime(page, getAllLotteryNumbers, predictors.predict);
+
+        process.on('SIGINT', async () => {
+            console.log('🔄 Đang đóng ứng dụng...');
+            await dataCollector.close();
+            await sendAutoNotification('Bot đang tắt...');
+            console.log('👋 Đã đóng tất cả kết nối. Thoát.');
+            process.exit(0);
+        });
+
+    } catch (error) {
+        console.error('❌ Lỗi khởi tạo ứng dụng:', error.message);
+        await sendAutoNotification('❌ Bot gặp lỗi khởi tạo: ' + error.message);
+        process.exit(1);
+    }
+}
+
+// Khởi động bot và các chức năng
+console.log('🚀 Khởi động ứng dụng dự đoán kết quả xổ số...');
+main();
 
 // Export bot instance và hàm gửi thông báo
 module.exports = {
