@@ -7,8 +7,22 @@ let page = null;
 // Khởi tạo scraper
 async function initialize() {
   try {
+    const chromePath = (() => {
+      const platform = process.platform;
+      if (platform === 'win32') {
+        return 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+      } else if (platform === 'linux') {
+        return '/usr/bin/google-chrome';
+      } else if (platform === 'darwin') {
+        return '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+      } else {
+        console.warn(`Platform ${platform} not explicitly supported, defaulting to Linux path`);
+        return '/usr/bin/google-chrome';
+      }
+    })();
+    
     browser = await puppeteer.launch({
-      executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      executablePath: chromePath,
       headless: true,
       defaultViewport: null,
       args: [

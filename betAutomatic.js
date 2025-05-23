@@ -1,7 +1,21 @@
 const puppeteer = require('puppeteer-core');
+const os = require('os');
 
 // Các hằng số cấu hình
-const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+const CHROME_PATH = (() => {
+  const platform = process.platform;
+  if (platform === 'win32') {
+    return 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+  } else if (platform === 'linux') {
+    return '/usr/bin/google-chrome';
+  } else if (platform === 'darwin') {
+    return '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  } else {
+    console.warn(`Platform ${platform} not explicitly supported, defaulting to Linux path`);
+    return '/usr/bin/google-chrome';
+  }
+})();
+
 const BETTING_URL = 'https://bet.6nluck8.cc/home/?inviteCode=4592386#/lottery?tabName=Lottery&id=47';
 
 const SELECTORS = {
@@ -112,10 +126,10 @@ async function launchBrowser() {
       '--metrics-recording-only',
       '--no-first-run',
       '--password-store=basic',
-      '--use-mock-keychain',
       '--no-sandbox',
-      '--disable-gpu',        // Giữ lại để tắt GPU acceleration
-      '--mute-audio',         // Giữ lại để tắt âm thanh
+      '--disable-setuid-sandbox',
+      '--disable-gpu',
+      '--mute-audio',
     ]
   });
 }
